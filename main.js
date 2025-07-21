@@ -11,6 +11,8 @@ function loadMemory() {
     phrases = JSON.parse(storedPhrases);
     responses = JSON.parse(storedResponses);
   }
+
+  updateMemoryExplorer();
 }
 
 // 💾 Save memory to localStorage
@@ -19,35 +21,43 @@ function saveMemory() {
   localStorage.setItem("responses", JSON.stringify(responses));
 }
 
-// 🔢 Encode text (simple token feature)
+// 🧠 Update visual memory explorer
+function updateMemoryExplorer() {
+  const list = document.getElementById("memory-list");
+  list.innerHTML = "";
+  phrases.forEach((phrase, i) => {
+    const item = document.createElement("li");
+    item.textContent = `"${phrase}" → ${responses[i]}`;
+    list.appendChild(item);
+  });
+}
+
+// 🔢 Encode input text
 function encodeText(text) {
   const tokens = text.toLowerCase().split(/\s+/);
   const value = tokens.length % 10;
   return tf.tensor2d([[value]]);
 }
 
-// 🔁 One-hot encode target labels
+// 🔁 One-hot encoder
 function toOneHot(index, length) {
   const arr = Array(length).fill(0);
   arr[index] = 1;
   return arr;
 }
 
-// 🧠 Train the neural model
+// 🔬 Train the model
 async function trainModel() {
   const numSamples = phrases.length;
   const numClasses = responses.length;
-
   if (numSamples < 2 || numClasses < 2) return;
 
   const xs = tf.tensor2d(
     phrases.map((_, i) => [i]),
     [numSamples, 1]
   );
-  const ys = tf.tensor2d(
-    responses.map((_, i) => toOneHot(i, numClasses)),
-    [numSamples, numClasses]
-  );
+  const ysArray = responses.map((_, i) => toOneHot(i, numClasses));
+  const ys = tf.tensor2d(ysArray, [numSamples, numClasses]);
 
   model = tf.sequential();
   model.add(
@@ -69,7 +79,8 @@ async function handleInput() {
     phrases.push(inputText);
     response = `You said: "${inputText}"`;
     responses.push(response);
-    saveMemory(); // 👉 Save every new interaction
+    saveMemory();
+    updateMemoryExplorer();
     await trainModel();
   }
 
@@ -102,6 +113,6 @@ async function handleInput() {
   );
 }
 
-// 🧠 Bootstrap memory and brain
+// 🧠 Boot up with memory
 loadMemory();
 trainModel();
