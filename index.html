@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Digital Brain</title>
+    <link rel="stylesheet" href="assets/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script
+      src="https://cdn.plot.ly/plotly-3.0.1.min.js"
+      charset="utf-8"
+    ></script>
+  </head>
+  <body>
+    <div id="container">
+      <h1>Talk to Your Brain</h1>
+      <input type="text" id="input" placeholder="Say something..." />
+      <button onclick="handleInput()">Send</button>
+      <div id="response"></div>
+      <div id="visualization"></div>
+    </div>
+    <script src="main.js"></script>
+  </body>
+</html>
