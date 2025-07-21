@@ -106,7 +106,7 @@ async function handleInput() {
       },
     ],
     {
-      title: "NeuroNova's Thought Confidence",
+      title: "SynthMind's Thought Confidence",
     }
   );
 }
@@ -142,7 +142,7 @@ async function simulateSelfThinking(thought) {
       },
     ],
     {
-      title: "NeuroNova's Internal Thought Process",
+      title: "SynthMind's Internal Thought Process",
     }
   );
 }

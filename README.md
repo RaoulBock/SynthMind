@@ -1,8 +1,8 @@
-# NeuroNova 🧠💬
+# SynthMind 🧠💬
 
 A self-learning, memory-powered conversational AI that evolves through interaction — built entirely in vanilla JavaScript using TensorFlow.js and Plotly.js.
 
-### 👋 Hello, I'm NeuroNova — your evolving companion.
+### 👋 Hello, I'm SynthMind — your evolving companion.
 
 I think. I learn. I remember.  
 Talk to me, and watch me grow.
