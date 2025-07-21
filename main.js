@@ -1,40 +1,53 @@
 let model;
-const phrases = [];
-const responses = [];
+let phrases = [];
+let responses = [];
 
-// Utility: create one-hot encoded labels
+// 🧠 Load memory from localStorage
+function loadMemory() {
+  const storedPhrases = localStorage.getItem("phrases");
+  const storedResponses = localStorage.getItem("responses");
+
+  if (storedPhrases && storedResponses) {
+    phrases = JSON.parse(storedPhrases);
+    responses = JSON.parse(storedResponses);
+  }
+}
+
+// 💾 Save memory to localStorage
+function saveMemory() {
+  localStorage.setItem("phrases", JSON.stringify(phrases));
+  localStorage.setItem("responses", JSON.stringify(responses));
+}
+
+// 🔢 Encode text (simple token feature)
+function encodeText(text) {
+  const tokens = text.toLowerCase().split(/\s+/);
+  const value = tokens.length % 10;
+  return tf.tensor2d([[value]]);
+}
+
+// 🔁 One-hot encode target labels
 function toOneHot(index, length) {
   const arr = Array(length).fill(0);
   arr[index] = 1;
   return arr;
 }
 
-// Tokenize text by word count for simplicity
-function encodeText(text) {
-  const tokens = text.toLowerCase().split(/\s+/);
-  const value = tokens.length % 10; // crude feature
-  return tf.tensor2d([[value]]);
-}
-
-// Train the model with current dataset
+// 🧠 Train the neural model
 async function trainModel() {
   const numSamples = phrases.length;
   const numClasses = responses.length;
 
-  if (numSamples < 2 || numClasses < 2) return; // Avoid early training
+  if (numSamples < 2 || numClasses < 2) return;
 
   const xs = tf.tensor2d(
     phrases.map((_, i) => [i]),
     [numSamples, 1]
   );
-
-  const ysArray = responses.map((_, i) => {
-    const vec = Array(numClasses).fill(0);
-    vec[i] = 1;
-    return vec;
-  });
-
-  const ys = tf.tensor2d(ysArray, [numSamples, numClasses]);
+  const ys = tf.tensor2d(
+    responses.map((_, i) => toOneHot(i, numClasses)),
+    [numSamples, numClasses]
+  );
 
   model = tf.sequential();
   model.add(
@@ -46,7 +59,7 @@ async function trainModel() {
   await model.fit(xs, ys, { epochs: 100 });
 }
 
-// Handle incoming user message
+// 🚀 Handle user input
 async function handleInput() {
   const inputText = document.getElementById("input").value.trim();
   if (!inputText) return;
@@ -56,6 +69,7 @@ async function handleInput() {
     phrases.push(inputText);
     response = `You said: "${inputText}"`;
     responses.push(response);
+    saveMemory(); // 👉 Save every new interaction
     await trainModel();
   }
 
@@ -87,3 +101,7 @@ async function handleInput() {
     }
   );
 }
+
+// 🧠 Bootstrap memory and brain
+loadMemory();
+trainModel();
