@@ -2,26 +2,20 @@ let model;
 let phrases = [];
 let responses = [];
 
-// 🧠 Load memory from localStorage
+// 🧠 Load memory
 function loadMemory() {
-  const storedPhrases = localStorage.getItem("phrases");
-  const storedResponses = localStorage.getItem("responses");
-
-  if (storedPhrases && storedResponses) {
-    phrases = JSON.parse(storedPhrases);
-    responses = JSON.parse(storedResponses);
-  }
-
+  phrases = JSON.parse(localStorage.getItem("phrases") || "[]");
+  responses = JSON.parse(localStorage.getItem("responses") || "[]");
   updateMemoryExplorer();
 }
 
-// 💾 Save memory to localStorage
+// 💾 Save memory
 function saveMemory() {
   localStorage.setItem("phrases", JSON.stringify(phrases));
   localStorage.setItem("responses", JSON.stringify(responses));
 }
 
-// 🧠 Update visual memory explorer
+// 📜 Update memory explorer UI
 function updateMemoryExplorer() {
   const list = document.getElementById("memory-list");
   list.innerHTML = "";
@@ -32,7 +26,7 @@ function updateMemoryExplorer() {
   });
 }
 
-// 🔢 Encode input text
+// 🔢 Encode text
 function encodeText(text) {
   const tokens = text.toLowerCase().split(/\s+/);
   const value = tokens.length % 10;
@@ -46,24 +40,24 @@ function toOneHot(index, length) {
   return arr;
 }
 
-// 🔬 Train the model
+// 🧠 Train the brain
 async function trainModel() {
-  const numSamples = phrases.length;
-  const numClasses = responses.length;
-  if (numSamples < 2 || numClasses < 2) return;
+  if (phrases.length < 2 || responses.length < 2) return;
 
   const xs = tf.tensor2d(
     phrases.map((_, i) => [i]),
-    [numSamples, 1]
+    [phrases.length, 1]
   );
-  const ysArray = responses.map((_, i) => toOneHot(i, numClasses));
-  const ys = tf.tensor2d(ysArray, [numSamples, numClasses]);
+  const ysArray = responses.map((_, i) => toOneHot(i, responses.length));
+  const ys = tf.tensor2d(ysArray, [responses.length, responses.length]);
 
   model = tf.sequential();
   model.add(
     tf.layers.dense({ units: 10, inputShape: [1], activation: "relu" })
   );
-  model.add(tf.layers.dense({ units: numClasses, activation: "softmax" }));
+  model.add(
+    tf.layers.dense({ units: responses.length, activation: "softmax" })
+  );
   model.compile({ optimizer: "adam", loss: "categoricalCrossentropy" });
 
   await model.fit(xs, ys, { epochs: 100 });
@@ -86,7 +80,7 @@ async function handleInput() {
 
   if (!model || typeof model.predict !== "function" || responses.length < 2) {
     document.getElementById("response").innerText =
-      "Still warming up... say a bit more to teach me!";
+      "Still warming up... say more to teach me!";
     return;
   }
 
@@ -98,6 +92,10 @@ async function handleInput() {
 
   document.getElementById("response").innerText = response;
 
+  const chatLog = JSON.parse(localStorage.getItem("chatLog") || "[]");
+  chatLog.push({ prompt: inputText, response });
+  localStorage.setItem("chatLog", JSON.stringify(chatLog));
+
   Plotly.newPlot(
     "visualization",
     [
@@ -108,11 +106,47 @@ async function handleInput() {
       },
     ],
     {
-      title: "Brain Activity – Confidence in Responses",
+      title: "NeuroNova's Thought Confidence",
     }
   );
 }
 
-// 🧠 Boot up with memory
+// 🌀 Autonomous Thought Loop
+setInterval(() => {
+  if (!model || phrases.length < 2) return;
+
+  const thought = phrases[Math.floor(Math.random() * phrases.length)];
+  simulateSelfThinking(thought);
+}, 15000); // every 15 seconds
+
+// 🤖 Internal thought simulation
+async function simulateSelfThinking(thought) {
+  const encoded = encodeText(thought);
+  const prediction = model.predict(encoded);
+  const predictionArray = await prediction.array();
+  const idx = predictionArray[0].indexOf(Math.max(...predictionArray[0]));
+  const response = responses[idx];
+
+  const chatLog = JSON.parse(localStorage.getItem("chatLog") || "[]");
+  chatLog.push({ prompt: thought, response });
+  localStorage.setItem("chatLog", JSON.stringify(chatLog));
+
+  document.getElementById("response").innerText = `🧠 Thought: ${response}`;
+  Plotly.newPlot(
+    "visualization",
+    [
+      {
+        x: responses,
+        y: predictionArray[0],
+        type: "bar",
+      },
+    ],
+    {
+      title: "NeuroNova's Internal Thought Process",
+    }
+  );
+}
+
+// 🧠 Initialize
 loadMemory();
 trainModel();
