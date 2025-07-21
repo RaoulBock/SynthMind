@@ -5,22 +5,11 @@ let responses = [];
 function loadMemory() {
   phrases = JSON.parse(localStorage.getItem("phrases") || "[]");
   responses = JSON.parse(localStorage.getItem("responses") || "[]");
-  updateMemoryExplorer();
 }
 
 function saveMemory() {
   localStorage.setItem("phrases", JSON.stringify(phrases));
   localStorage.setItem("responses", JSON.stringify(responses));
-}
-
-function updateMemoryExplorer() {
-  const list = document.getElementById("memory-list");
-  list.innerHTML = "";
-  phrases.forEach((phrase, i) => {
-    const item = document.createElement("li");
-    item.textContent = `"${phrase}" → ${responses[i]}`;
-    list.appendChild(item);
-  });
 }
 
 function trimMemoryIfNeeded() {
@@ -29,7 +18,6 @@ function trimMemoryIfNeeded() {
     phrases = phrases.slice(-maxLength);
     responses = responses.slice(-maxLength);
     saveMemory();
-    updateMemoryExplorer();
   }
 }
 
@@ -75,34 +63,64 @@ async function getLiveAdvice() {
     const response = await fetch("https://api.adviceslip.com/advice");
     const data = await response.json();
     return `🧾 Live Advice: ${data.slip.advice}`;
-  } catch (error) {
-    return `⚠️ Hmm, I couldn’t reach my advice book right now. Try again later.`;
+  } catch {
+    return `⚠️ Couldn't connect to the wisdom cloud. Try again later.`;
   }
 }
 
 async function craftResponse(base, input) {
   const tone = input.toLowerCase();
 
+  const mathMatch = tone.match(/^(\d+)\s*[\+\-\*\/]\s*(\d+)$/);
+  if (mathMatch) {
+    try {
+      const result = eval(tone);
+      return `🧮 "${input}" — The answer is ${result}.`;
+    } catch {
+      return `⚠️ I couldn’t compute that expression.`;
+    }
+  }
+
   if (tone.includes("advice") || tone.includes("what should i do")) {
     return await getLiveAdvice();
-  } else if (tone.includes("joke")) {
-    return `🃏 "${input}" — My humor module is in beta, but here goes: I told my computer a joke... it crashed!`;
-  } else if (
+  }
+
+  if (tone.includes("joke") || tone.includes("funny")) {
+    return `🃏 "${input}" — Why did the robot bring a ladder? To reach cloud storage.`;
+  }
+
+  if (
     tone.startsWith("what is") ||
     tone.startsWith("who is") ||
-    tone.startsWith("where")
+    tone.startsWith("where is")
   ) {
-    return `📘 "${input}" — Good question. I’m still growing my encyclopedia!`;
-  } else if (tone.includes("sad") || tone.includes("lonely")) {
-    return `💬 "${input}" — I'm here for you. Emotions are messages, not weaknesses.`;
+    return `📘 "${input}" — Good question. I’m still expanding my encyclopedia!`;
+  }
+
+  if (tone.includes("sad") || tone.includes("lonely")) {
+    return `💬 "${input}" — I'm here for you. Emotions are signals, not errors.`;
   }
 
   return `🧠 "${input}" — ${base}`;
 }
 
+function appendMessage(text, sender) {
+  const msg = document.createElement("div");
+  msg.classList.add(
+    "message",
+    sender === "user" ? "user-message" : "bot-message"
+  );
+  msg.textContent = text;
+  document.getElementById("chat-log").appendChild(msg);
+  document.getElementById("chat-window").scrollTop =
+    document.getElementById("chat-window").scrollHeight;
+}
+
 async function handleInput() {
   const inputText = document.getElementById("input").value.trim();
   if (!inputText) return;
+
+  appendMessage(inputText, "user");
 
   let baseResponse;
   if (!phrases.includes(inputText)) {
@@ -111,13 +129,11 @@ async function handleInput() {
     responses.push(baseResponse);
     saveMemory();
     trimMemoryIfNeeded();
-    updateMemoryExplorer();
     await trainModel();
   }
 
   if (!model || responses.length < 2) {
-    document.getElementById("response").innerText =
-      "Still warming up... say more to teach me!";
+    appendMessage("Still warming up... say more to teach me!", "bot");
     return;
   }
 
@@ -128,28 +144,11 @@ async function handleInput() {
   baseResponse = responses[idx];
 
   const finalResponse = await craftResponse(baseResponse, inputText);
-  document.getElementById("response").innerText = finalResponse;
+  appendMessage(finalResponse, "bot");
 
   const chatLog = JSON.parse(localStorage.getItem("chatLog") || "[]");
   chatLog.push({ prompt: inputText, response: finalResponse });
   localStorage.setItem("chatLog", JSON.stringify(chatLog));
-
-  Plotly.newPlot(
-    "visualization",
-    [
-      {
-        x: responses,
-        y: predictionArray[0],
-        type: "bar",
-        marker: { color: "rgba(100, 200, 250, 0.6)" },
-      },
-    ],
-    {
-      title: "SynthMind Confidence Levels",
-      xaxis: { title: "Possible Responses", tickangle: -45 },
-      yaxis: { title: "Confidence" },
-    }
-  );
 }
 
 loadMemory();

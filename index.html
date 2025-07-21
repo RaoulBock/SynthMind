@@ -8,19 +8,19 @@
     <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
   </head>
   <body>
-    <div id="container">
-      <h1>Talk to SynthMind</h1>
-      <h2 id="brain-intro">👋 Hello, I'm <strong>SynthMind</strong>, your evolving companion.</h2>
+    <div id="chat-container">
+      <header>
+        <h1>SynthMind</h1>
+        <p>💬 Ask me anything — I evolve with you.</p>
+      </header>
 
-      <input type="text" id="input" placeholder="Say something..." />
-      <button onclick="handleInput()">Send</button>
+      <div id="chat-window">
+        <div id="chat-log"></div>
+      </div>
 
-      <div id="response"></div>
-      <div id="visualization"></div>
-
-      <div id="memory-explorer">
-        <h3>🧠 My Memory Log</h3>
-        <ul id="memory-list"></ul>
+      <div id="input-bar">
+        <input type="text" id="input" placeholder="Type your message..." />
+        <button onclick="handleInput()">➤</button>
       </div>
     </div>
 
