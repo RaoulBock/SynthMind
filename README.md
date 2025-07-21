@@ -1,7 +1,9 @@
-# NeuroNova 🧠💬  
-A self-learning, memory-powered conversational AI that evolves through interaction — built entirely in vanilla JavaScript using TensorFlow.js and Plotly.js.  
+# NeuroNova 🧠💬
 
-### 👋 Hello, I'm NeuroNova — your evolving companion.  
+A self-learning, memory-powered conversational AI that evolves through interaction — built entirely in vanilla JavaScript using TensorFlow.js and Plotly.js.
+
+### 👋 Hello, I'm NeuroNova — your evolving companion.
+
 I think. I learn. I remember.  
 Talk to me, and watch me grow.
 
@@ -17,9 +19,3 @@ Talk to me, and watch me grow.
 - 💬 Conversation logging for introspection
 
 ---
-
-## 🚀 Getting Started
-
-### 1. Clone the repo:
-```bash
-git clone https://github.com/raoulbock/neuronova.git
