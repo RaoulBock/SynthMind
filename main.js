@@ -2,20 +2,17 @@ let model;
 let phrases = [];
 let responses = [];
 
-// 🧠 Load memory
 function loadMemory() {
   phrases = JSON.parse(localStorage.getItem("phrases") || "[]");
   responses = JSON.parse(localStorage.getItem("responses") || "[]");
   updateMemoryExplorer();
 }
 
-// 💾 Save memory
 function saveMemory() {
   localStorage.setItem("phrases", JSON.stringify(phrases));
   localStorage.setItem("responses", JSON.stringify(responses));
 }
 
-// 📜 Update memory explorer UI
 function updateMemoryExplorer() {
   const list = document.getElementById("memory-list");
   list.innerHTML = "";
@@ -26,21 +23,28 @@ function updateMemoryExplorer() {
   });
 }
 
-// 🔢 Encode text
+function trimMemoryIfNeeded() {
+  const maxLength = 500;
+  if (phrases.length > maxLength) {
+    phrases = phrases.slice(-maxLength);
+    responses = responses.slice(-maxLength);
+    saveMemory();
+    updateMemoryExplorer();
+  }
+}
+
 function encodeText(text) {
   const tokens = text.toLowerCase().split(/\s+/);
   const value = tokens.length % 10;
   return tf.tensor2d([[value]]);
 }
 
-// 🔁 One-hot encoder
 function toOneHot(index, length) {
   const arr = Array(length).fill(0);
   arr[index] = 1;
   return arr;
 }
 
-// 🧠 Train the brain
 async function trainModel() {
   if (phrases.length < 2 || responses.length < 2) return;
 
@@ -63,17 +67,31 @@ async function trainModel() {
   await model.fit(xs, ys, { epochs: 100 });
 }
 
-// 🚀 Handle user input
+function craftResponse(base, input) {
+  if (input.toLowerCase().includes("sad")) {
+    return `💬 "${input}" — I’m here for you. Sadness is a signal, not a flaw.`;
+  } else if (
+    input.toLowerCase().includes("joke") ||
+    input.toLowerCase().includes("funny")
+  ) {
+    return `🃏 "${input}" — Why did the neural net cross the road? It had data on the other side!`;
+  } else if (input.toLowerCase().includes("fact")) {
+    return `📚 "${input}" — Honey never spoils. Nature’s original preservative.`;
+  }
+  return `🧠 "${input}" — ${base}`;
+}
+
 async function handleInput() {
   const inputText = document.getElementById("input").value.trim();
   if (!inputText) return;
 
-  let response;
+  let baseResponse;
   if (!phrases.includes(inputText)) {
     phrases.push(inputText);
-    response = `You said: "${inputText}"`;
-    responses.push(response);
+    baseResponse = `You said: "${inputText}"`;
+    responses.push(baseResponse);
     saveMemory();
+    trimMemoryIfNeeded();
     updateMemoryExplorer();
     await trainModel();
   }
@@ -88,12 +106,13 @@ async function handleInput() {
   const prediction = model.predict(encoded);
   const predictionArray = await prediction.array();
   const idx = predictionArray[0].indexOf(Math.max(...predictionArray[0]));
-  response = responses[idx];
+  baseResponse = responses[idx];
 
-  document.getElementById("response").innerText = response;
+  const finalResponse = craftResponse(baseResponse, inputText);
+  document.getElementById("response").innerText = finalResponse;
 
   const chatLog = JSON.parse(localStorage.getItem("chatLog") || "[]");
-  chatLog.push({ prompt: inputText, response });
+  chatLog.push({ prompt: inputText, response: finalResponse });
   localStorage.setItem("chatLog", JSON.stringify(chatLog));
 
   Plotly.newPlot(
@@ -106,32 +125,38 @@ async function handleInput() {
       },
     ],
     {
-      title: "SynthMind's Thought Confidence",
+      title: "SynthMind Confidence Chart",
     }
   );
 }
 
-// 🌀 Autonomous Thought Loop
 setInterval(() => {
   if (!model || phrases.length < 2) return;
-
   const thought = phrases[Math.floor(Math.random() * phrases.length)];
   simulateSelfThinking(thought);
-}, 15000); // every 15 seconds
+}, 15000);
 
-// 🤖 Internal thought simulation
 async function simulateSelfThinking(thought) {
   const encoded = encodeText(thought);
   const prediction = model.predict(encoded);
   const predictionArray = await prediction.array();
   const idx = predictionArray[0].indexOf(Math.max(...predictionArray[0]));
-  const response = responses[idx];
+  const baseResponse = responses[idx];
+  const finalResponse = craftResponse(baseResponse, thought);
+
+  phrases.push(thought);
+  responses.push(baseResponse);
+  saveMemory();
+  trimMemoryIfNeeded();
+  updateMemoryExplorer();
 
   const chatLog = JSON.parse(localStorage.getItem("chatLog") || "[]");
-  chatLog.push({ prompt: thought, response });
+  chatLog.push({ prompt: thought, response: finalResponse });
   localStorage.setItem("chatLog", JSON.stringify(chatLog));
 
-  document.getElementById("response").innerText = `🧠 Thought: ${response}`;
+  document.getElementById(
+    "response"
+  ).innerText = `🧠 Thought: ${finalResponse}`;
   Plotly.newPlot(
     "visualization",
     [
@@ -142,11 +167,10 @@ async function simulateSelfThinking(thought) {
       },
     ],
     {
-      title: "SynthMind's Internal Thought Process",
+      title: "SynthMind Internal Thought",
     }
   );
 }
 
-// 🧠 Initialize
 loadMemory();
 trainModel();
